@@ -29,26 +29,26 @@ function getLicenseKeyFromFile(): string | null {
 }
 
 async function bootstrap() {
-  const licenseKeyFromEnv = process.env.LICENSE_KEY;
+  // const licenseKeyFromEnv = process.env.LICENSE_KEY;
 
-  const validKey = getLicenseKeyFromFile();
+  // const validKey = getLicenseKeyFromFile();
 
-  if (!validKey) {
-    console.log('Missing License key from file. Exiting the application...');
-    process.exit(1); // Thoát chương trình với mã lỗi
-  }
+  // if (!validKey) {
+  //   console.log('Missing License key from file. Exiting the application...');
+  //   process.exit(1); // Thoát chương trình với mã lỗi
+  // }
 
-  if (!licenseKeyFromEnv) {
-    console.log('Missing license key from env. Exiting the application...');
-    process.exit(1);
-  }
+  // if (!licenseKeyFromEnv) {
+  //   console.log('Missing license key from env. Exiting the application...');
+  //   process.exit(1);
+  // }
 
-  if (licenseKeyFromEnv !== validKey) {
-    console.log('Invalid license key. Exiting the application...');
-    process.exit(1); // Thoát chương trình với má lỗi
-  }
+  // if (licenseKeyFromEnv !== validKey) {
+  //   console.log('Invalid license key. Exiting the application...');
+  //   process.exit(1); // Thoát chương trình với má lỗi
+  // }
 
-  console.log(`License key found in env file. Starting the application...`);
+  // console.log(`License key found in env file. Starting the application...`);
 
   await startApp();
 }
