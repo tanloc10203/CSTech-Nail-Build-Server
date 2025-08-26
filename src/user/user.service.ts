@@ -12,13 +12,18 @@ import mongoose from 'mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserRoles, UserStatus } from './schemas/user.schema';
+import { HistoryService } from '@src/history/history.service';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private readonly userModel: mongoose.Model<User>,
+
     @Inject(forwardRef(() => ActivitiesService))
     private readonly activityService: ActivitiesService,
+
+    @Inject(forwardRef(() => HistoryService))
+    private readonly historyService: HistoryService,
   ) {}
 
   async createAdmin(createUserDto: CreateUserDto) {
@@ -166,5 +171,21 @@ export class UserService {
     });
 
     return foundIsAdmin;
+  }
+
+  async delete(id: string) {
+    const user = await this.userModel.findById(id);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await Promise.all([
+      this.userModel.findByIdAndDelete(id),
+      this.activityService.deleteByUserId(id),
+      this.historyService.deleteByUserId(id),
+    ]);
+
+    return true;
   }
 }

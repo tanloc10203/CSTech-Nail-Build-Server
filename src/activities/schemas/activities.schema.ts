@@ -35,6 +35,9 @@ export class Activity extends mongoose.Document {
   @Prop({ type: Number, default: 0 })
   totalTurn: number;
 
+  @Prop({ type: Number, default: 0 })
+  checkedInOrder: number;
+
   @Prop({
     type: String,
     default: ActivityType.CheckIn,

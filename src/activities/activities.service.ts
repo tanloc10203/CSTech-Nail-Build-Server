@@ -76,6 +76,7 @@ export class ActivitiesService {
       activeDate: currentDate,
       totalTurn: isLate ? 1 : 0,
       firstOrder: currentOrder,
+      checkedInOrder: currentOrder,
     });
 
     // 3. Save
@@ -261,10 +262,7 @@ export class ActivitiesService {
 
     if (others.length === 0) return;
 
-    const newDataSorted = this.insertionSortActivity(
-      others,
-      1,
-    );
+    const newDataSorted = this.insertionSortActivity(others, 1);
 
     await this.updateSortedOrder(newDataSorted);
   }
@@ -316,5 +314,9 @@ export class ActivitiesService {
     }));
 
     await this.activityModel.bulkWrite(bulkOps);
+  }
+
+  deleteByUserId(userId: string) {
+    return this.activityModel.deleteMany({ user: userId });
   }
 }

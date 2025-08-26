@@ -4,6 +4,7 @@ import { DOCUMENT_NAME, UserSchema } from './schemas/user.schema';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { ActivitiesModule } from '@src/activities/activities.module';
+import { HistoryModule } from '@src/history/history.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { ActivitiesModule } from '@src/activities/activities.module';
       },
     ]),
     forwardRef(() => ActivitiesModule),
+    forwardRef(() => HistoryModule),
   ],
   controllers: [UserController],
   providers: [UserService],

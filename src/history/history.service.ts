@@ -219,4 +219,8 @@ export class HistoryService {
 
     return response as History[];
   }
+
+  async deleteByUserId(userId: string) {
+    return this.historyModel.deleteMany({ employee: userId });
+  }
 }

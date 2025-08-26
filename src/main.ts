@@ -12,6 +12,7 @@ import * as notifier from 'node-notifier';
 import * as path from 'path';
 import * as morgan from 'morgan';
 import { AppModule } from './app.module';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 dotenv.config({
   path: path.resolve(__dirname, '../../.env'),
@@ -101,7 +102,17 @@ async function startApp() {
     }),
   );
 
-  await app.listen(PORT, process.env.IP_ADDRESS);
+  const config = new DocumentBuilder()
+    .setTitle('Nail api')
+    .setDescription('The nail API description')
+    .setVersion('1.0')
+    .build();
+
+  const documentFactory = () => SwaggerModule.createDocument(app, config);
+
+  SwaggerModule.setup('docs', app, documentFactory);
+
+  await app.listen(PORT);
   // await app.listen(PORT);
 
   showMessageNoti('Application has started successfully!');

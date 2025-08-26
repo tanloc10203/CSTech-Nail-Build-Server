@@ -2,6 +2,7 @@ import { OK } from '@app/utils/success-response.util';
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
@@ -64,6 +65,14 @@ export class UserController {
     return new OK({
       message: 'Users found successfully',
       metadata: response,
+    });
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    await this.userService.delete(id);
+    return new OK({
+      message: 'User deleted successfully',
     });
   }
 }
