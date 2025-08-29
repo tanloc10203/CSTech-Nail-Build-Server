@@ -13,6 +13,7 @@ import * as path from 'path';
 import * as morgan from 'morgan';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as bonjour from 'bonjour';
 
 dotenv.config({
   path: path.resolve(__dirname, '../../.env'),
@@ -102,6 +103,18 @@ async function startApp() {
     }),
   );
 
+  const b = bonjour();
+
+  b.publish({
+    name: 'server-nail-app',
+    type: 'http',
+    host: process.env.IP_ADDRESS,
+    port: PORT,
+    txt: { role: 'app' },
+  });
+  
+  console.log('Announced mDNS: server-nail-app._http.local');
+
   const config = new DocumentBuilder()
     .setTitle('Nail api')
     .setDescription('The nail API description')
@@ -112,10 +125,10 @@ async function startApp() {
 
   SwaggerModule.setup('docs', app, documentFactory);
 
-  await app.listen(PORT);
+  await app.listen(PORT, process.env.IP_ADDRESS);
   // await app.listen(PORT);
 
-  showMessageNoti('Application has started successfully!');
+  showMessageNoti(`Application has started successfully with port ${PORT}, IP: ${process.env.IP_ADDRESS}`);
 }
 
 bootstrap();
