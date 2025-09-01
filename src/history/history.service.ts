@@ -73,6 +73,8 @@ export class HistoryService {
       ),
     ]);
 
+    await this.activityService.sortOrder(createHistoryDto.employee);
+
     // 3. Push notification to admin
     await Promise.all([
       this.eventService.pushNotificationToAdmin(),

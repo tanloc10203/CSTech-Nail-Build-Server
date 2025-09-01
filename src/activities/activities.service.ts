@@ -230,77 +230,93 @@ export class ActivitiesService {
       currentByUser.type = ActivityType.CheckOut;
 
       await currentByUser.save();
-
-      // 2. Get other activities gather than by order of current and sorted by order ASC
-      const others = await this.activityModel
-        .find({
-          activeDate: currentDate,
-          order: { $gt: currentByUser.order },
-        })
-        .sort({ order: 1 });
-
-      // if length = 0 is equal current activity by user
-      if (others.length === 0) return;
-
-      // sorted priorities by total turn
-      const newDataSorted = this.insertionSortActivity(
-        [currentByUser, ...others],
-        currentByUser.order,
-      );
-
-      await this.updateSortedOrder(newDataSorted);
-
-      return true;
     }
 
     // 2. Get other activities gather than by order of current and sorted by order ASC
     const others = await this.activityModel
       .find({
         activeDate: currentDate,
+        order: { $gt: currentByUser.order },
       })
       .sort({ order: 1 });
 
+    // if length = 0 is equal current activity by user
     if (others.length === 0) return;
 
-    const newDataSorted = this.insertionSortActivity(others, 1);
+    // sorted priorities by total turn
+    const newDataSorted = this.insertionSortActivity(
+      [currentByUser, ...others],
+      currentByUser.order,
+    );
 
     await this.updateSortedOrder(newDataSorted);
+
+    // 2. Get other activities gather than by order of current and sorted by order ASC
+    // const others = await this.activityModel
+    //   .find({
+    //     activeDate: currentDate,
+    //   })
+    //   .sort({ order: 1 });
+
+    // if (others.length === 0) return;
+
+    // const newDataSorted = this.insertionSortActivity(others, 1);
   }
+
+  private isHalfTurn = (initTurn: number) => {
+    return initTurn % 1 === 0.5;
+  };
 
   private insertionSortActivity(array: Activity[], startOrder: number) {
     const len = array.length;
 
     if (len === 0) return array;
 
+    let newArray = array.map((item, index) => {
+      const _item = item.toObject();
+
+      return {
+        ..._item,
+        totalTurnTerm: this.isHalfTurn(_item.totalTurn)
+          ? _item.totalTurn - 0.5
+          : _item.totalTurn,
+      };
+    });
+
     // set old order index
     for (let i = 0; i < len; i++) {
-      array[i].oldOrder = array[i].order;
+      newArray[i].oldOrder = newArray[i].order;
     }
 
     for (let i = 1; i < len; i++) {
-      let item = array[i];
+      let item = newArray[i];
       let j = i - 1; // index previous item
 
       // sort by total turn
       while (
         j >= 0 &&
-        (array[j].totalTurn > item.totalTurn ||
-          (array[j].totalTurn === item.totalTurn &&
-            array[j].firstOrder > item.firstOrder))
+        (newArray[j].totalTurnTerm > item.totalTurnTerm ||
+          (newArray[j].totalTurnTerm === item.totalTurnTerm &&
+            newArray[j].firstOrder > item.firstOrder))
       ) {
-        array[j + 1] = array[j];
+        newArray[j + 1] = newArray[j];
         j--;
       }
 
-      array[j + 1] = item;
+      newArray[j + 1] = item;
     }
 
     // update order
     for (let i = 0; i < len; i++) {
-      array[i].order = startOrder + i;
+      newArray[i].order = startOrder + i;
     }
 
-    return array;
+    const resultNewArray = newArray.map((item) => {
+      delete item.totalTurnTerm;
+      return item;
+    });
+
+    return resultNewArray as unknown as Activity[];
   }
 
   private async updateSortedOrder(sorted: Activity[]) {
