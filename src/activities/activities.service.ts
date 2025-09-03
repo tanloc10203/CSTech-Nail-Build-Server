@@ -183,8 +183,38 @@ export class ActivitiesService {
     return true;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} activity`;
+  async remove(id: string) {
+    const activity = await this.findById(id);
+
+    if (!activity) {
+      throw new NotFoundException('Activity not found!');
+    }
+
+    await Promise.all([
+      activity.deleteOne(),
+      this.historyService.removeByUser(activity.user._id.toString()),
+    ]);
+
+    if (activity.firstOrder === 1) {
+      return true;
+    }
+
+    // update many firstOrder > 1 then -1
+    await this.activityModel.updateMany(
+      { firstOrder: { $gt: 1 } },
+      { $inc: { firstOrder: -1 } },
+    );
+
+    const order = activity.order;
+
+    if (order === 1) return true;
+
+    await this.activityModel.updateMany(
+      { order: { $gt: order } },
+      { $inc: { order: -1 } },
+    );
+
+    return true;
   }
 
   async findLastActivityByUser(userId: string): Promise<Activity | null> {

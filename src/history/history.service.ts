@@ -208,7 +208,7 @@ export class HistoryService {
     return 'OK';
   }
 
-  remove(id: number) {
+  async remove(id: string) {
     return `This action removes a #${id} history`;
   }
 
@@ -224,5 +224,9 @@ export class HistoryService {
 
   async deleteByUserId(userId: string) {
     return this.historyModel.deleteMany({ employee: userId });
+  }
+
+  async removeByUser(userId: string) {
+    await this.historyModel.deleteMany({ employee: userId });
   }
 }
