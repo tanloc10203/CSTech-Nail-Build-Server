@@ -11,6 +11,7 @@ import { ActivitiesService } from './activities.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 import { OK } from '@app/utils/success-response.util';
+import { EditTurnDto } from './dto/edit-activity.dto';
 
 @Controller('activities')
 export class ActivitiesController {
@@ -40,6 +41,11 @@ export class ActivitiesController {
     @Body() updateActivityDto: UpdateActivityDto,
   ) {
     return this.activitiesService.update(id, updateActivityDto);
+  }
+
+  @Patch('edit-turn/:id')
+  editTurn(@Param('id') id: string, @Body() editData: EditTurnDto) {
+    return this.activitiesService.editTotalTurn(id, editData.turn);
   }
 
   @Delete(':id')

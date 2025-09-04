@@ -125,8 +125,8 @@ async function startApp() {
 
   SwaggerModule.setup('docs', app, documentFactory);
 
-  await app.listen(PORT, process.env.IP_ADDRESS);
-  // await app.listen(PORT);
+  // await app.listen(PORT, process.env.IP_ADDRESS);
+  await app.listen(PORT);
 
   showMessageNoti(`Application has started successfully with port ${PORT}, IP: ${process.env.IP_ADDRESS}`);
 }

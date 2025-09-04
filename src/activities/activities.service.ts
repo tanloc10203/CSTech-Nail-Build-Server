@@ -214,6 +214,9 @@ export class ActivitiesService {
       { $inc: { order: -1 } },
     );
 
+    // push get activities
+    await this.eventService.getActivities();
+
     return true;
   }
 
@@ -364,5 +367,23 @@ export class ActivitiesService {
 
   deleteByUserId(userId: string) {
     return this.activityModel.deleteMany({ user: userId });
+  }
+
+  async editTotalTurn(activityId: string, totalTurn: number) {
+    const result = await this.activityModel.findByIdAndUpdate(
+      activityId,
+      {
+        $set: { totalTurn },
+      },
+      {
+        new: true,
+      },
+    );
+
+    if (!result) throw new NotFoundException('Activity not found!');
+
+    await this.sortOrder(result.user._id.toString(), false);
+
+    await this.eventService.getActivities();
   }
 }
