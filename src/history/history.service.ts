@@ -78,7 +78,7 @@ export class HistoryService {
     // 3. Push notification to admin
     await Promise.all([
       this.eventService.pushNotificationToAdmin(),
-      this.eventService.getActivities(),
+      this.eventService.revalidateActivity(),
     ]);
 
     // 4. Push event to activities
@@ -127,7 +127,7 @@ export class HistoryService {
     // 4. Push event to activities
     await Promise.all([
       this.eventService.pushNotificationToAdmin(),
-      this.eventService.getActivities(),
+      this.eventService.revalidateActivity(),
     ]);
 
     // create notification
@@ -136,14 +136,6 @@ export class HistoryService {
 
   async checkout(id: string) {
     return 'OIK';
-  }
-
-  findAll() {
-    return `This action returns all history`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} history`;
   }
 
   async update(id: string, updateHistoryDto: UpdateHistoryDto) {
@@ -202,7 +194,7 @@ export class HistoryService {
       await this.eventService.pushNotificationToAdmin();
 
       // 6. Push event to activities
-      await this.eventService.getActivities();
+      await this.eventService.revalidateActivity();
     }
 
     return 'OK';

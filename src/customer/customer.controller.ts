@@ -11,12 +11,15 @@ import { CustomerService } from './customer.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { Created, OK } from '@app/utils/success-response.util';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @Controller('customer')
+@ApiTags('Customer')
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create customer' })
   async create(@Body() createCustomerDto: CreateCustomerDto) {
     return new Created({
       message: 'Customer created successfully',
@@ -25,6 +28,7 @@ export class CustomerController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'Find all customer' })
   async findAll() {
     return new OK({
       message: "Get customer's list successfully",
@@ -32,21 +36,12 @@ export class CustomerController {
     });
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.customerService.findOne(+id);
-  }
-
   @Patch(':id')
+  @ApiOperation({ summary: 'Update customer' })
   update(
     @Param('id') id: string,
     @Body() updateCustomerDto: UpdateCustomerDto,
   ) {
     return this.customerService.update(+id, updateCustomerDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.customerService.remove(+id);
   }
 }

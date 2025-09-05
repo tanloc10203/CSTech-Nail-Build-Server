@@ -13,12 +13,15 @@ import { CreateHistoryDto } from './dto/create-history.dto';
 import { UpdateHistoryDto } from './dto/update-history.dto';
 import { Created, OK } from '@app/utils/success-response.util';
 import { DoneHistoryDto } from './dto/done-history.dto';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @Controller('history')
+@ApiTags('History')
 export class HistoryController {
   constructor(private readonly historyService: HistoryService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create history' })
   async create(@Body() createHistoryDto: CreateHistoryDto) {
     return new Created({
       message: 'History created successfully',
@@ -27,6 +30,7 @@ export class HistoryController {
   }
 
   @Post('/done')
+  @ApiOperation({ summary: 'Done history' })
   @HttpCode(200)
   async done(@Body() doneHistoryDto: DoneHistoryDto) {
     return new Created({
@@ -36,6 +40,7 @@ export class HistoryController {
   }
 
   @Post('/checkout/:id')
+  @ApiOperation({ summary: 'Checkout history' })
   @HttpCode(200)
   async checkout(@Param('id') id: string) {
     return new Created({
@@ -44,17 +49,8 @@ export class HistoryController {
     });
   }
 
-  @Get()
-  findAll() {
-    return this.historyService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.historyService.findOne(+id);
-  }
-
   @Patch(':id')
+  @ApiOperation({ summary: 'Update history' })
   async update(
     @Param('id') id: string,
     @Body() updateHistoryDto: UpdateHistoryDto,
@@ -63,10 +59,5 @@ export class HistoryController {
       message: 'Update history successfully',
       metadata: await this.historyService.update(id, updateHistoryDto),
     });
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.historyService.remove(id);
   }
 }

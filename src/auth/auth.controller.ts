@@ -13,12 +13,15 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
 import { AuthGuard } from './auth.guard';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @Controller('auth')
+@ApiTags('Auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('signup')
+  @ApiOperation({ summary: 'Create new user' })
   async signup(@Body() signupDto: SignupDto, @Res() res: Response) {
     const response = await this.authService.signup(signupDto);
 
@@ -29,6 +32,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @ApiOperation({ summary: 'Login user' })
   async login(@Body() loginDto: LoginDto, @Res() res: Response) {
     const response = await this.authService.login(loginDto);
 
@@ -40,6 +44,7 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @Get('profile')
+  @ApiOperation({ summary: 'Get current user logging' })
   async getProfile(@Req() req: Request, @Res() res: Response) {
     const response = await this.authService.profile(req.user.userId);
 
@@ -51,6 +56,7 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @Post('refresh-token')
+  @ApiOperation({ summary: 'Refresh token' })
   async refreshToken(@Req() req: Request, @Res() res: Response) {
     const response = await this.authService.refreshToken(
       req.refreshToken,
@@ -66,6 +72,7 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @Post('logout')
+  @ApiOperation({ summary: 'Logout user' })
   async logout(@Req() req: Request, @Res() res: Response) {
     await this.authService.logout(req.keyStore);
     return new OK({

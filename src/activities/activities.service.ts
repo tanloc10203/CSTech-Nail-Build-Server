@@ -95,12 +95,12 @@ export class ActivitiesService {
     await this.eventService.pushNotificationToAdmin();
 
     // 6. Push get activities
-    await this.eventService.getActivities();
+    await this.eventService.revalidateActivity();
 
     return activity;
   }
 
-  async findAll(): Promise<Activity[]> {
+  async findAll(sortBy: keyof Activity = 'order'): Promise<Activity[]> {
     const currentDate = moment().format('YYYY-MM-DD');
 
     const response = await this.activityModel
@@ -112,7 +112,7 @@ export class ActivitiesService {
         select: '-password -salt -role -__v',
         populate: { path: 'userSkills', select: '-__v' },
       })
-      .sort({ order: 1 })
+      .sort({ [sortBy]: 1 })
       .lean();
 
     if (response.length === 0) return [];
@@ -177,7 +177,7 @@ export class ActivitiesService {
 
       await Promise.all([foundSwap.save(), foundActive.save()]);
 
-      await this.eventService.getActivities();
+      await this.eventService.revalidateActivity();
     }
 
     return true;
@@ -215,7 +215,7 @@ export class ActivitiesService {
     );
 
     // push get activities
-    await this.eventService.getActivities();
+    await this.eventService.revalidateActivity();
 
     return true;
   }
@@ -384,6 +384,6 @@ export class ActivitiesService {
 
     await this.sortOrder(result.user._id.toString(), false);
 
-    await this.eventService.getActivities();
+    await this.eventService.revalidateActivity();
   }
 }

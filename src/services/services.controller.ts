@@ -13,12 +13,15 @@ import {
 import { Response } from 'express';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { ServicesService } from './services.service';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @Controller('services')
+@ApiTags('Services')
 export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
 
   @Get('/')
+  @ApiOperation({ summary: 'Get all services' })
   async findAll(@Res() res: Response) {
     return new OK({
       message: 'Services found successfully',
@@ -27,6 +30,7 @@ export class ServicesController {
   }
 
   @Get('/:id')
+  @ApiOperation({ summary: 'Get service by id' })
   async findById(@Res() res: Response, @Param('id') id: string) {
     return new OK({
       message: 'Service found successfully',
@@ -35,6 +39,7 @@ export class ServicesController {
   }
 
   @Delete('/:id')
+  @ApiOperation({ summary: 'Delete service by id' })
   async remove(@Res() res: Response, @Param('id') id: string) {
     return new OK({
       message: 'Service deleted successfully',
@@ -43,6 +48,7 @@ export class ServicesController {
   }
 
   @Post('/')
+  @ApiOperation({ summary: 'Create service' })
   async create(
     @Res() res: Response,
     @Body() createServiceDto: CreateServiceDto,
@@ -54,6 +60,7 @@ export class ServicesController {
   }
 
   @Patch('/:id')
+  @ApiOperation({ summary: 'Update service by id' })
   async update(
     @Res() res: Response,
     @Param('id') id: string,

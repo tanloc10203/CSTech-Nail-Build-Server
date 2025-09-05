@@ -34,4 +34,8 @@ export class EventService {
 
     this.socket.emit('activities:get', results);
   }
+
+  revalidateActivity() {
+    this.socket.emit('activities:revalidate', true);
+  }
 }
