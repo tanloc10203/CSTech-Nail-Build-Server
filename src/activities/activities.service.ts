@@ -8,6 +8,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { EventService } from '@src/event/event.service';
 import { HistoryService } from '@src/history/history.service';
+import { HistoryStatus } from '@src/history/schemas/history.schema';
 import { NotificationsService } from '@src/notifications/notifications.service';
 import { NotiTypes } from '@src/notifications/schemas/notifications.schema';
 import { UserService } from '@src/user/user.service';
@@ -95,7 +96,7 @@ export class ActivitiesService {
     await this.eventService.pushNotificationToAdmin();
 
     // 6. Push get activities
-    await this.eventService.revalidateActivity();
+    this.eventService.revalidateActivity();
 
     return activity;
   }
@@ -124,7 +125,10 @@ export class ActivitiesService {
           activity.user._id.toString(),
         );
 
-        const current = histories.length > 0 ? histories[0] : null;
+        const current =
+          histories.length > 0 && histories[0]?.status === HistoryStatus.Pending
+            ? histories[0]
+            : null;
 
         // sorted history
         const sortedHistory = histories.sort(
@@ -177,7 +181,7 @@ export class ActivitiesService {
 
       await Promise.all([foundSwap.save(), foundActive.save()]);
 
-      await this.eventService.revalidateActivity();
+      this.eventService.revalidateActivity();
     }
 
     return true;
@@ -215,7 +219,7 @@ export class ActivitiesService {
     );
 
     // push get activities
-    await this.eventService.revalidateActivity();
+    this.eventService.revalidateActivity();
 
     return true;
   }
@@ -384,6 +388,6 @@ export class ActivitiesService {
 
     await this.sortOrder(result.user._id.toString(), false);
 
-    await this.eventService.revalidateActivity();
+    this.eventService.revalidateActivity();
   }
 }

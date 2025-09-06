@@ -76,10 +76,9 @@ export class HistoryService {
     await this.activityService.sortOrder(createHistoryDto.employee);
 
     // 3. Push notification to admin
-    await Promise.all([
-      this.eventService.pushNotificationToAdmin(),
-      this.eventService.revalidateActivity(),
-    ]);
+    await this.eventService.pushNotificationToAdmin();
+
+    this.eventService.revalidateActivity();
 
     // 4. Push event to activities
 
@@ -125,10 +124,9 @@ export class HistoryService {
     // 3. Push notification to admin
 
     // 4. Push event to activities
-    await Promise.all([
-      this.eventService.pushNotificationToAdmin(),
-      this.eventService.revalidateActivity(),
-    ]);
+    await this.eventService.pushNotificationToAdmin();
+
+    this.eventService.revalidateActivity();
 
     // create notification
     return result;
@@ -194,14 +192,10 @@ export class HistoryService {
       await this.eventService.pushNotificationToAdmin();
 
       // 6. Push event to activities
-      await this.eventService.revalidateActivity();
+      this.eventService.revalidateActivity();
     }
 
     return 'OK';
-  }
-
-  async remove(id: string) {
-    return `This action removes a #${id} history`;
   }
 
   async findByUser(userId: string): Promise<History[]> {
