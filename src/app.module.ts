@@ -16,6 +16,8 @@ import { UserModule } from './user/user.module';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { AdminService } from './admin.service';
+import { TaskModule } from './task/task.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 dotenv.config({
   path: path.resolve(__dirname, '../../.env'),
@@ -23,6 +25,7 @@ dotenv.config({
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       envFilePath: '.env',
       isGlobal: true,
@@ -52,6 +55,7 @@ dotenv.config({
     EventModule,
     CustomerModule,
     HistoryModule,
+    TaskModule,
   ],
   controllers: [],
   providers: [
