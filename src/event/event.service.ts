@@ -38,4 +38,8 @@ export class EventService {
   revalidateActivity() {
     this.socket.emit('activities:revalidate', true);
   }
+
+  revalidateGetUserCheckin() {
+    this.socket.emit('employee:revalidate', true);
+  }
 }

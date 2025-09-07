@@ -146,10 +146,6 @@ export class ActivitiesService {
     return results;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} activity`;
-  }
-
   async findById(id: string) {
     return await this.activityModel.findById(new mongoose.Types.ObjectId(id));
   }
@@ -187,39 +183,35 @@ export class ActivitiesService {
     return true;
   }
 
-  async remove(id: string) {
+  async remove(id: string): Promise<boolean> {
     const activity = await this.findById(id);
-
     if (!activity) {
       throw new NotFoundException('Activity not found!');
     }
 
+    const { firstOrder, order, user } = activity;
+
+    // Xoá activity và history song song
     await Promise.all([
       activity.deleteOne(),
-      this.historyService.removeByUser(activity.user._id.toString()),
+      this.historyService.removeByUser(user.toString()),
     ]);
 
-    if (activity.firstOrder === 1) {
-      return true;
-    }
+    // Cập nhật lại firstOrder và order song song
+    await Promise.all([
+      this.activityModel.updateMany(
+        { firstOrder: { $gt: firstOrder } },
+        { $inc: { firstOrder: -1 } },
+      ),
+      this.activityModel.updateMany(
+        { order: { $gt: order } },
+        { $inc: { order: -1 } },
+      ),
+    ]);
 
-    // update many firstOrder > 1 then -1
-    await this.activityModel.updateMany(
-      { firstOrder: { $gt: 1 } },
-      { $inc: { firstOrder: -1 } },
-    );
-
-    const order = activity.order;
-
-    if (order === 1) return true;
-
-    await this.activityModel.updateMany(
-      { order: { $gt: order } },
-      { $inc: { order: -1 } },
-    );
-
-    // push get activities
-    this.eventService.revalidateActivity();
+    // Gửi event revalidate (không cần chờ nếu không phụ thuộc kết quả)
+    void this.eventService.revalidateActivity();
+    void this.eventService.revalidateGetUserCheckin();
 
     return true;
   }
@@ -277,6 +269,8 @@ export class ActivitiesService {
       })
       .sort({ order: 1 });
 
+    console.log(`others:::`, { others, order: currentByUser.firstOrder });
+
     // if length = 0 is equal current activity by user
     if (others.length === 0) return;
 
@@ -287,17 +281,24 @@ export class ActivitiesService {
     );
 
     await this.updateSortedOrder(newDataSorted);
+  }
 
-    // 2. Get other activities gather than by order of current and sorted by order ASC
-    // const others = await this.activityModel
-    //   .find({
-    //     activeDate: currentDate,
-    //   })
-    //   .sort({ order: 1 });
+  private async sortOrderByTotalTurn() {
+    const currentDate = moment().format('YYYY-MM-DD');
 
-    // if (others.length === 0) return;
+    const others = await this.activityModel
+      .find({
+        activeDate: currentDate,
+      })
+      .sort({ order: 1 });
 
-    // const newDataSorted = this.insertionSortActivity(others, 1);
+    // if length = 0 is equal current activity
+    if (others.length === 0) return;
+
+    // Re-sort all activities at position 1
+    const newDataSorted = this.insertionSortActivity(others, 1);
+
+    await this.updateSortedOrder(newDataSorted);
   }
 
   private isHalfTurn = (initTurn: number) => {
@@ -386,7 +387,9 @@ export class ActivitiesService {
 
     if (!result) throw new NotFoundException('Activity not found!');
 
-    await this.sortOrder(result.user._id.toString(), false);
+    console.log(`user:::`, result.user.toString());
+
+    await this.sortOrderByTotalTurn();
 
     this.eventService.revalidateActivity();
   }
