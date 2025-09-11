@@ -13,6 +13,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserRoles, UserStatus } from './schemas/user.schema';
 import { HistoryService } from '@src/history/history.service';
+import { EventService } from '@src/event/event.service';
 
 @Injectable()
 export class UserService {
@@ -24,6 +25,8 @@ export class UserService {
 
     @Inject(forwardRef(() => HistoryService))
     private readonly historyService: HistoryService,
+
+    private readonly eventService: EventService,
   ) {}
 
   async createAdmin(createUserDto: CreateUserDto) {
@@ -64,6 +67,8 @@ export class UserService {
     }
 
     await user.save();
+
+    this.eventService.revalidateGetUserCheckin();
 
     return user;
   }
@@ -162,6 +167,8 @@ export class UserService {
       new: true,
     });
 
+    this.eventService.revalidateActivity();
+
     return true;
   }
 
@@ -185,6 +192,9 @@ export class UserService {
       this.activityService.deleteByUserId(id),
       this.historyService.deleteByUserId(id),
     ]);
+
+    this.eventService.revalidateActivity();
+    this.eventService.revalidateGetUserCheckin();
 
     return true;
   }

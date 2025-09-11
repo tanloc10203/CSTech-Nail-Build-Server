@@ -38,6 +38,9 @@ export class Activity extends mongoose.Document {
   @Prop({ type: Number, default: 0 })
   checkedInOrder: number;
 
+  @Prop({ type: Boolean, default: false })
+  isLate: boolean;
+
   @Prop({
     type: String,
     default: ActivityType.CheckIn,

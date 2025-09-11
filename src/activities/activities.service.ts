@@ -78,6 +78,7 @@ export class ActivitiesService {
       totalTurn: isLate ? 1 : 0,
       firstOrder: currentOrder,
       checkedInOrder: currentOrder,
+      isLate,
     });
 
     // 3. Save
@@ -88,7 +89,7 @@ export class ActivitiesService {
         notiType: NotiTypes.CheckInSuccess,
       }),
     ]);
-    await this.sortOrder(createActivityDto.user, false);
+    await this.sortOrderByTotalTurn();
 
     // 4. Create notification
 
@@ -318,13 +319,9 @@ export class ActivitiesService {
         totalTurnTerm: this.isHalfTurn(_item.totalTurn)
           ? _item.totalTurn - 0.5
           : _item.totalTurn,
+        oldOrder: _item.order, // lưu order cũ
       };
     });
-
-    // set old order index
-    for (let i = 0; i < len; i++) {
-      newArray[i].oldOrder = newArray[i].order;
-    }
 
     for (let i = 1; i < len; i++) {
       let item = newArray[i];
@@ -344,17 +341,21 @@ export class ActivitiesService {
       newArray[j + 1] = item;
     }
 
-    // update order
-    for (let i = 0; i < len; i++) {
-      newArray[i].order = startOrder + i;
-    }
+    // sort bằng Array.sort()
+    // newArray.sort((a, b) => {
+    //   if (a.totalTurnTerm !== b.totalTurnTerm) {
+    //     return a.totalTurnTerm - b.totalTurnTerm;
+    //   }
+    //   return a.firstOrder - b.firstOrder;
+    // });
 
-    const resultNewArray = newArray.map((item) => {
-      delete item.totalTurnTerm;
-      return item;
+    // update order mới
+    newArray = newArray.map((item, index) => {
+      const { totalTurnTerm, ...rest } = item; // bỏ field tạm
+      return { ...rest, order: startOrder + index };
     });
 
-    return resultNewArray as unknown as Activity[];
+    return newArray as unknown as Activity[];
   }
 
   private async updateSortedOrder(sorted: Activity[]) {
@@ -386,8 +387,6 @@ export class ActivitiesService {
     );
 
     if (!result) throw new NotFoundException('Activity not found!');
-
-    console.log(`user:::`, result.user.toString());
 
     await this.sortOrderByTotalTurn();
 

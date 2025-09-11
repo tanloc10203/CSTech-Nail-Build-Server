@@ -5,6 +5,7 @@ import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { ActivitiesModule } from '@src/activities/activities.module';
 import { HistoryModule } from '@src/history/history.module';
+import { EventModule } from '@src/event/event.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { HistoryModule } from '@src/history/history.module';
     ]),
     forwardRef(() => ActivitiesModule),
     forwardRef(() => HistoryModule),
+    EventModule,
   ],
   controllers: [UserController],
   providers: [UserService],
