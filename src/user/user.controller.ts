@@ -9,11 +9,12 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { SearchingAccountDto } from './dto/searching-account.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from './user.service';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @Controller('user')
 @ApiTags('User')
@@ -86,6 +87,20 @@ export class UserController {
     await this.userService.delete(id);
     return new OK({
       message: 'User deleted successfully',
+    });
+  }
+
+  @Patch('change-password/:id')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Change password' })
+  async changePassword(
+    @Param('id') id: string,
+    @Body() data: ChangePasswordDto,
+  ) {
+    await this.userService.changePassword(data, id);
+
+    return new OK({
+      message: 'Change password successfully',
     });
   }
 }

@@ -14,6 +14,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserRoles, UserStatus } from './schemas/user.schema';
 import { HistoryService } from '@src/history/history.service';
 import { EventService } from '@src/event/event.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class UserService {
@@ -197,5 +198,25 @@ export class UserService {
     this.eventService.revalidateGetUserCheckin();
 
     return true;
+  }
+
+  async changePassword(payload: ChangePasswordDto, userId: string) {
+    const { oldPassword, newPassword } = payload;
+
+    const user = await this.userModel.findById(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+
+    if (!isMatch) {
+      throw new NotFoundException('Old password not match');
+    }
+
+    user.password = await bcrypt.hash(newPassword, user.salt);
+    
+    await user.save();
   }
 }
