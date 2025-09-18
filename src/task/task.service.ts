@@ -1,5 +1,6 @@
+import { showMessageNoti } from '@app/utils/notifier';
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { EventService } from '@src/event/event.service';
 
 @Injectable()
@@ -16,12 +17,13 @@ export class TaskService {
   //   void this.eventService.revalidateGetUserCheckin();
   // }
 
-  // Dùng cron expression có sẵn (mỗi ngày lúc 12 giờ đêm)
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  // Dùng cron expression có sẵn (mỗi ngày lúc 0h05p giờ đêm)
+  @Cron('5 0 * * *')
   handleMidnight() {
-    this.logger.debug('Chạy lúc 0h00 mỗi ngày');
-    void this.eventService.revalidateActivity();
-    void this.eventService.revalidateGetUserCheckin();
+    this.logger.debug('Chạy lúc 0h05p mỗi ngày');
+    showMessageNoti('Đang refresh dữ liệu ngày mới');
+    void this.eventService.revalidateActivity(true);
+    void this.eventService.revalidateGetUserCheckin(true);
   }
 
   // // Interval: chạy lặp lại mỗi 5 giây

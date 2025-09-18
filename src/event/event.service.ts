@@ -35,11 +35,11 @@ export class EventService {
     this.socket.emit('activities:get', results);
   }
 
-  revalidateActivity() {
-    this.socket.emit('activities:revalidate', true);
+  revalidateActivity(refresh?: boolean) {
+    this.socket.emit('activities:revalidate', refresh);
   }
 
-  revalidateGetUserCheckin() {
-    this.socket.emit('employee:revalidate', true);
+  revalidateGetUserCheckin(refresh?: boolean) {
+    this.socket.emit('employee:revalidate', refresh);
   }
 }

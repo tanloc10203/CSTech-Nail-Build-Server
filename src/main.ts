@@ -4,16 +4,15 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationError } from 'class-validator';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import helmet from 'helmet';
-import * as notifier from 'node-notifier';
-import * as path from 'path';
 import * as morgan from 'morgan';
+import * as path from 'path';
 import { AppModule } from './app.module';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as bonjour from 'bonjour';
+import { showMessageNoti } from '@app/utils/notifier';
 
 dotenv.config({
   path: path.resolve(__dirname, '../../.env'),
@@ -57,14 +56,6 @@ async function bootstrap() {
   await startApp();
 }
 
-function showMessageNoti(message: string) {
-  notifier.notify({
-    title: 'App server',
-    message: message,
-    icon: path.join(__dirname, 'assets/icon.ico'),
-  });
-}
-
 async function startApp() {
   const app = await NestFactory.create(AppModule);
 
@@ -104,18 +95,6 @@ async function startApp() {
       },
     }),
   );
-
-  const b = bonjour();
-
-  b.publish({
-    name: 'server-nail-app',
-    type: 'http',
-    host: process.env.IP_ADDRESS,
-    port: PORT,
-    txt: { role: 'app' },
-  });
-
-  console.log('Announced mDNS: server-nail-app._http.local');
 
   const config = new DocumentBuilder()
     .setTitle('Nail api')
