@@ -215,4 +215,8 @@ export class HistoryService {
   async removeByUser(userId: string) {
     await this.historyModel.deleteMany({ employee: userId });
   }
+
+  async countByUserId(userId: string): Promise<number> {
+    return await this.historyModel.countDocuments({ employee: userId });
+  }
 }

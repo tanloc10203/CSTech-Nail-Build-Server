@@ -103,7 +103,10 @@ export class ActivitiesService {
   }
 
   async findAll(sortBy: keyof Activity = 'order'): Promise<Activity[]> {
+    // const currentDate = moment().add(1, 'days').format('YYYY-MM-DD');
     const currentDate = moment().format('YYYY-MM-DD');
+
+    console.log(`currentDate:::`, currentDate);
 
     const response = await this.activityModel
       .find({
@@ -158,25 +161,27 @@ export class ActivitiesService {
     }
 
     if (updateActivityDto.newPosition && updateActivityDto.oldPosition) {
+      console.log(`updateActivityDto:::`, updateActivityDto);
       // update swap position current date
 
-      foundActive.order = updateActivityDto.newPosition;
-      foundActive.oldOrder = updateActivityDto.oldPosition;
+      foundActive.firstOrder = updateActivityDto.newPosition;
 
-      // find activity by order and date
+      // find activity by firstOrder and date
       const foundSwap = await this.activityModel.findOne({
         activeDate: moment().format('YYYY-MM-DD'),
-        order: updateActivityDto.newPosition,
+        firstOrder: updateActivityDto.newPosition,
       });
 
       if (!foundSwap) {
         throw new NotFoundException('Activity not found!');
       }
 
-      foundSwap.order = updateActivityDto.oldPosition;
-      foundSwap.oldOrder = updateActivityDto.newPosition;
+      foundSwap.firstOrder = updateActivityDto.oldPosition;
 
       await Promise.all([foundSwap.save(), foundActive.save()]);
+
+      // sort order by total turn
+      await this.sortOrderByTotalTurn();
 
       this.eventService.revalidateActivity();
     }
@@ -270,8 +275,6 @@ export class ActivitiesService {
       })
       .sort({ order: 1 });
 
-    console.log(`others:::`, { others, order: currentByUser.firstOrder });
-
     // if length = 0 is equal current activity by user
     if (others.length === 0) return;
 
@@ -296,8 +299,17 @@ export class ActivitiesService {
     // if length = 0 is equal current activity
     if (others.length === 0) return;
 
-    // Re-sort all activities at position 1
-    const newDataSorted = this.insertionSortActivity(others, 1);
+    // Check if this is first turn for all users (fair distribution)
+    const isFirstTurn = await this.checkIfFirstTurn(others);
+    
+    let newDataSorted;
+    if (isFirstTurn) {
+      // First turn: fair distribution based on check-in time
+      newDataSorted = await this.sortFirstTurnFairly(others, 1);
+    } else {
+      // Subsequent turns: sort by totalTurn
+      newDataSorted = this.insertionSortActivity(others, 1);
+    }
 
     await this.updateSortedOrder(newDataSorted);
   }
@@ -305,6 +317,56 @@ export class ActivitiesService {
   private isHalfTurn = (initTurn: number) => {
     return initTurn % 1 === 0.5;
   };
+
+  /**
+   * Check if this is the first turn for all users (everyone has history <= 1)
+   */
+  private async checkIfFirstTurn(activities: Activity[]): Promise<boolean> {
+    const userIds = activities.map(activity => {
+      // Handle both ObjectId and populated user object
+      if (typeof activity.user === 'object' && activity.user._id) {
+        return activity.user._id.toString();
+      }
+      return activity.user.toString();
+    });
+    
+    // Count history for each user
+    const historyCounts = await Promise.all(
+      userIds.map(async (userId) => {
+        const count = await this.historyService.countByUserId(userId);
+        return { userId, count };
+      })
+    );
+
+    // Check if all users have history <= 1
+    return historyCounts.every(({ count }) => count <= 1);
+  }
+
+  /**
+   * Sort activities fairly for first turn based on check-in time
+   * People who checked in earlier will be placed at the end to give others a chance
+   */
+  private async sortFirstTurnFairly(activities: Activity[], startOrder: number): Promise<Activity[]> {
+    // Sort by check-in time (earliest first)
+    const sortedByCheckIn = activities.sort((a, b) => {
+      const timeA = new Date(a.checkedInAt).getTime();
+      const timeB = new Date(b.checkedInAt).getTime();
+      return timeA - timeB;
+    });
+
+    // Reverse the order so early check-ins go to the end
+    const fairOrder = sortedByCheckIn.reverse();
+
+    // Update order starting from startOrder
+    return fairOrder.map((activity, index) => {
+      const updatedActivity = activity.toObject();
+      return {
+        ...updatedActivity,
+        order: startOrder + index,
+        oldOrder: activity.order,
+      } as Activity;
+    });
+  }
 
   private insertionSortActivity(array: Activity[], startOrder: number) {
     const len = array.length;
