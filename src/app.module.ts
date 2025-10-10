@@ -19,6 +19,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ServicesModule } from './services/services.module';
 import { TaskModule } from './task/task.module';
 import { UserModule } from './user/user.module';
+import { HealthController } from './health/health.controller';
 
 dotenv.config({
   path: path.resolve(__dirname, '../../.env'),
@@ -56,9 +57,9 @@ dotenv.config({
     EventModule,
     CustomerModule,
     HistoryModule,
-    TaskModule,
+    TaskModule
   ],
-  controllers: [],
+  controllers: [HealthController],
   providers: [
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
     AdminService,

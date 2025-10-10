@@ -161,9 +161,6 @@ export class ActivitiesService {
     }
 
     if (updateActivityDto.newPosition && updateActivityDto.oldPosition) {
-      console.log(`updateActivityDto:::`, updateActivityDto);
-      // update swap position current date
-
       foundActive.firstOrder = updateActivityDto.newPosition;
 
       // find activity by firstOrder and date
