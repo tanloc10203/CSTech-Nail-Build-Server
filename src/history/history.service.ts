@@ -42,7 +42,7 @@ export class HistoryService {
         employee: createHistoryDto.employee,
         finishedAt: null,
         status: HistoryStatus.Pending,
-      }),
+      })
     ]);
 
     if (!foundEmployee) {
@@ -66,21 +66,18 @@ export class HistoryService {
       this.notificationsService.create({
         notiContent: `Booked successfully. Employee ${foundEmployee.firstName} ${foundEmployee.lastName} started turning at ${currentDate}`,
         notiType: NotiTypes.StartedTurningOver,
-      }),
+      }), // 3. Push notification to admin
       this.activityService.incrementTurn(
         createHistoryDto.employee,
         createHistoryDto.turn,
       ),
     ]);
 
-    await this.activityService.sortOrder(createHistoryDto.employee);
-
-    // 3. Push notification to admin
-    await this.eventService.pushNotificationToAdmin();
-
-    this.eventService.revalidateActivity();
-
-    // 4. Push event to activities
+    await Promise.all([
+      this.activityService.sortOrder(createHistoryDto.employee),
+      this.eventService.pushNotificationToAdmin(),
+      this.eventService.revalidateActivity(),
+    ]);
 
     return history;
   }
@@ -115,25 +112,18 @@ export class HistoryService {
       this.notificationsService.create({
         notiContent: `Booked successfully. Employee ${employee.firstName} ${employee.lastName} finished turning at ${moment().format('DD/MM/YYYY HH:mm:ss')}`,
         notiType: NotiTypes.FinishedActivity,
-      }),
+      }), // 2. Create notification
       this.activityService.sortOrder(doneHistoryDto.employee),
     ]);
 
-    // 2. Create notification
-
     // 3. Push notification to admin
-
-    // 4. Push event to activities
     await this.eventService.pushNotificationToAdmin();
 
+    // 4. Push event to activities
     this.eventService.revalidateActivity();
 
     // create notification
     return result;
-  }
-
-  async checkout(id: string) {
-    return 'OIK';
   }
 
   async update(id: string, updateHistoryDto: UpdateHistoryDto) {

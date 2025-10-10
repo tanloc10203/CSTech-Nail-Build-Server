@@ -1,19 +1,17 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  HttpCode,
-} from '@nestjs/common';
-import { HistoryService } from './history.service';
-import { CreateHistoryDto } from './dto/create-history.dto';
-import { UpdateHistoryDto } from './dto/update-history.dto';
 import { Created, OK } from '@app/utils/success-response.util';
-import { DoneHistoryDto } from './dto/done-history.dto';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Param,
+  Patch,
+  Post
+} from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CreateHistoryDto } from './dto/create-history.dto';
+import { DoneHistoryDto } from './dto/done-history.dto';
+import { UpdateHistoryDto } from './dto/update-history.dto';
+import { HistoryService } from './history.service';
 
 @Controller('history')
 @ApiTags('History')
@@ -36,16 +34,6 @@ export class HistoryController {
     return new Created({
       message: 'History done successfully',
       metadata: await this.historyService.done(doneHistoryDto),
-    });
-  }
-
-  @Post('/checkout/:id')
-  @ApiOperation({ summary: 'Checkout history' })
-  @HttpCode(200)
-  async checkout(@Param('id') id: string) {
-    return new Created({
-      message: 'Checkout successfully',
-      metadata: await this.historyService.checkout(id),
     });
   }
 

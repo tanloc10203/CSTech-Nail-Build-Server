@@ -106,8 +106,6 @@ export class ActivitiesService {
     // const currentDate = moment().add(1, 'days').format('YYYY-MM-DD');
     const currentDate = moment().format('YYYY-MM-DD');
 
-    console.log(`currentDate:::`, currentDate);
-
     const response = await this.activityModel
       .find({
         activeDate: currentDate,
