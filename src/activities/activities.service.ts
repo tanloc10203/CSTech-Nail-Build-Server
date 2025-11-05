@@ -350,7 +350,8 @@ export class ActivitiesService {
     });
 
     // Reverse the order so early check-ins go to the end
-    const fairOrder = sortedByCheckIn.reverse();
+    // const fairOrder = sortedByCheckIn.reverse();
+    const fairOrder = [...sortedByCheckIn];
 
     // Update order starting from startOrder
     return fairOrder.map((activity, index) => {

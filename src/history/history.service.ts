@@ -207,6 +207,7 @@ export class HistoryService {
   }
 
   async countByUserId(userId: string): Promise<number> {
-    return await this.historyModel.countDocuments({ employee: userId });
+    const currentDate = moment().format('YYYY-MM-DD');
+    return await this.historyModel.countDocuments({ employee: userId, date: currentDate });
   }
 }
