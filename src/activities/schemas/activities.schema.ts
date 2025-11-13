@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import moment from 'moment';
 import mongoose from 'mongoose';
 
 export const DOCUMENT_NAME = 'Activity';
@@ -14,8 +15,8 @@ export class Activity extends mongoose.Document {
   @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'User' })
   user: mongoose.Types.ObjectId;
 
-  @Prop({ type: Date, default: Date.now })
-  activeDate: Date;
+  @Prop({ type: String, required: true })
+  activeDate: string;
 
   @Prop({ type: Date, required: true })
   checkedInAt: Date;
@@ -41,6 +42,9 @@ export class Activity extends mongoose.Document {
   @Prop({ type: Boolean, default: false })
   isLate: boolean;
 
+  @Prop({ type: Boolean, default: false })
+  isFirstTurn: boolean;
+  
   @Prop({
     type: String,
     default: ActivityType.CheckIn,

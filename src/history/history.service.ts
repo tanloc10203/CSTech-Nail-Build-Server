@@ -32,8 +32,6 @@ export class HistoryService {
   ) {}
 
   async create(createHistoryDto: CreateHistoryDto) {
-    const currentDate = moment().format('DD/MM/YYYY HH:mm:ss');
-
     // Check employee exist &&& Check turn booked finished ?
     const [foundEmployee, isPending] = await Promise.all([
       this.userService.findById(createHistoryDto.employee),
@@ -42,7 +40,7 @@ export class HistoryService {
         employee: createHistoryDto.employee,
         finishedAt: null,
         status: HistoryStatus.Pending,
-      })
+      }),
     ]);
 
     if (!foundEmployee) {
@@ -63,21 +61,14 @@ export class HistoryService {
     // 2. Create notification
     await Promise.all([
       history.save(),
-      this.notificationsService.create({
-        notiContent: `Booked successfully. Employee ${foundEmployee.firstName} ${foundEmployee.lastName} started turning at ${currentDate}`,
-        notiType: NotiTypes.StartedTurningOver,
-      }), // 3. Push notification to admin
       this.activityService.incrementTurn(
         createHistoryDto.employee,
         createHistoryDto.turn,
       ),
     ]);
 
-    await Promise.all([
-      this.activityService.sortOrder(createHistoryDto.employee),
-      this.eventService.pushNotificationToAdmin(),
-      this.eventService.revalidateActivity(),
-    ]);
+    await this.activityService.sortOrderByTotalTurn(false, createHistoryDto.employee);
+    this.eventService.revalidateActivity();
 
     return history;
   }
@@ -106,23 +97,15 @@ export class HistoryService {
     history.finishedAt = moment().toDate();
     history.status = HistoryStatus.Finished;
 
-    // update history
     const [result] = await Promise.all([
       history.save(),
-      this.notificationsService.create({
-        notiContent: `Booked successfully. Employee ${employee.firstName} ${employee.lastName} finished turning at ${moment().format('DD/MM/YYYY HH:mm:ss')}`,
-        notiType: NotiTypes.FinishedActivity,
-      }), // 2. Create notification
-      this.activityService.sortOrder(doneHistoryDto.employee),
+      this.activityService.updateCheckedOutAt(doneHistoryDto.employee),
     ]);
 
-    // 3. Push notification to admin
-    await this.eventService.pushNotificationToAdmin();
+    await this.activityService.sortOrderByTotalTurn(false, doneHistoryDto.employee);
 
-    // 4. Push event to activities
     this.eventService.revalidateActivity();
 
-    // create notification
     return result;
   }
 
@@ -208,6 +191,9 @@ export class HistoryService {
 
   async countByUserId(userId: string): Promise<number> {
     const currentDate = moment().format('YYYY-MM-DD');
-    return await this.historyModel.countDocuments({ employee: userId, date: currentDate });
+    return await this.historyModel.countDocuments({
+      employee: userId,
+      date: currentDate,
+    });
   }
 }

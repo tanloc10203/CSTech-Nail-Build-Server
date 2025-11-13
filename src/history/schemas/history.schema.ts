@@ -52,8 +52,8 @@ export class History extends mongoose.Document {
   })
   employee: mongoose.Types.ObjectId;
 
-  @Prop({ type: Date })
-  date: Date;
+  @Prop({ type: String })
+  date: string;
 }
 
 export const HistoriesSchema = SchemaFactory.createForClass(History);
