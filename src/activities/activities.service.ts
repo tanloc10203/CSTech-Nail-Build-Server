@@ -29,7 +29,7 @@ export class ActivitiesService {
     private readonly eventService: EventService,
     @Inject(forwardRef(() => HistoryService))
     private readonly historyService: HistoryService,
-  ) {}
+  ) { }
 
   /**
    * Check-in employee
@@ -306,15 +306,14 @@ export class ActivitiesService {
       .find({
         activeDate: currentDate,
       })
-      .sort({ order: 1 });
+      .sort({ order: 1 })
+      .lean() as Activity[];
 
     // if length = 0 is equal current activity
     if (others.length === 0) return;
 
     // Check if this is first turn for all users (fair distribution)
     const isFirstTurn = await this.checkIfFirstTurn(others);
-
-    console.log('isFirstTurn', isFirstTurn);
 
     let newDataSorted: Activity[] = [];
     if (isFirstTurn) {
@@ -357,16 +356,12 @@ export class ActivitiesService {
     userId: string,
   ): Promise<Activity[]> {
     try {
-      console.log(`activities::`, activities);
-
       // Sort by check-in time (earliest first)
       const sortedByCheckIn = activities.sort((a, b) => {
         const timeA = new Date(a.checkedInAt).getTime();
         const timeB = new Date(b.checkedInAt).getTime();
         return timeA - timeB;
       });
-
-      console.log(`sortedByCheckIn::`, sortedByCheckIn);
 
       if (isCheckIn) {
         // Check-in case (isCheckIn = true)
@@ -394,6 +389,18 @@ export class ActivitiesService {
             activity.user.toString() !== userId,
         );
 
+        // If không có 1 ai có isFirstTurn = true thì sắp xếp theo thời gian check-in
+        if (!hasFirstTurnTrue) {
+          // Update order starting from startOrder
+          return sortedByCheckIn.map((activity, index) => {
+            return {
+              ...activity,
+              order: startOrder + index,
+              oldOrder: activity.order,
+            } as Activity;
+          });
+        }
+
         // Get other activities (excluding the selected user's activity)
         const otherActivities = sortedByCheckIn.filter(
           (activity) => activity.user.toString() !== userId,
@@ -404,57 +411,73 @@ export class ActivitiesService {
           (a, b) => a.order - b.order,
         );
 
-        let fairOrder: Activity[] = [];
+        // Find the activity with isFirstTurn = false that has the highest order
+        const notFirstTurnActivities = sortedOtherActivities.filter(
+          (activity) => !activity.isFirstTurn,
+        );
 
-        if (hasFirstTurnTrue) {
-          // Find the activity with isFirstTurn = false that has the highest order
-          const notFirstTurnActivities = sortedOtherActivities.filter(
-            (activity) => !activity.isFirstTurn,
-          );
+        // If không có 1 ai có isFirstTurn = false thì put activitySelectedByUserId at the top
+        if (notFirstTurnActivities.length === 0) {
+          // set lại order cho nó là top 1
+          activitySelectedByUserId.order = 1;
+          activitySelectedByUserId.oldOrder = activitySelectedByUserId.order;
 
-          if (notFirstTurnActivities.length > 0) {
-            // Find the one with highest order (last position in sorted array)
-            const lastNotFirstTurn =
-              notFirstTurnActivities[notFirstTurnActivities.length - 1];
+          const activitiesAfterLastNotFirstTurn = [...sortedOtherActivities].map((activity) => {
+            const activityObj = (activity && typeof activity.toObject === 'function') ? activity.toObject() : activity;
+            return {
+              ...activityObj,
+              order: activity.order + 1,
+              oldOrder: activity.order,
+            } as Activity;
+          });
 
-            // Find the index of lastNotFirstTurn in sortedOtherActivities
-            const lastNotFirstTurnIndex = sortedOtherActivities.findIndex(
-              (activity) =>
-                activity.user.toString() ===
-                lastNotFirstTurn.user.toString(),
-            );
-
-            // Split: activities before and including lastNotFirstTurn, then activitySelectedByUserId, then the rest
-            fairOrder = [
-              ...sortedOtherActivities.slice(0, lastNotFirstTurnIndex + 1),
-              activitySelectedByUserId,
-              ...sortedOtherActivities.slice(lastNotFirstTurnIndex + 1),
-            ];
-          } else {
-            // No isFirstTurn = false found, put activitySelectedByUserId at the top
-            fairOrder = [activitySelectedByUserId, ...sortedOtherActivities];
-          }
-        } else {
-          // No activities with isFirstTurn = true, use original logic
-          fairOrder = [...sortedByCheckIn];
+          // No isFirstTurn = false found, put activitySelectedByUserId at the top
+          return [activitySelectedByUserId, ...activitiesAfterLastNotFirstTurn];
         }
 
-        // Update order starting from startOrder
-        return fairOrder.map((activity, index) => {
+        // Find the one with highest order (last position in sorted array)
+        const lastNotFirstTurn =
+          notFirstTurnActivities[notFirstTurnActivities.length - 1];
+
+        // Find the index of lastNotFirstTurn in sortedOtherActivities
+        const lastNotFirstTurnIndex = sortedOtherActivities.findIndex(
+          (activity) =>
+            activity.user.toString() ===
+            lastNotFirstTurn.user.toString(),
+        );
+
+        const startOrderAfterLastNotFirstTurn = lastNotFirstTurn.order + 1;
+
+        // Set order cho activitySelectedByUserId là order của lastNotFirstTurn + 1
+        activitySelectedByUserId.order = startOrderAfterLastNotFirstTurn;
+        activitySelectedByUserId.oldOrder = activitySelectedByUserId.order;
+
+        const activitiesAfterLastNotFirstTurn = this.insertionSortActivity([...sortedOtherActivities.slice(lastNotFirstTurnIndex + 1)], startOrderAfterLastNotFirstTurn).map((item) => {
           return {
-            ...activity,
-            order: startOrder + index,
-            oldOrder: activity.order,
+            ...item,
+            order: item.order + 1,
+            oldOrder: item.order,
           } as Activity;
         });
+
+        // Split: activities before and including lastNotFirstTurn, then activitySelectedByUserId, then the rest
+        const fairOrder = [
+          ...sortedOtherActivities.slice(0, lastNotFirstTurnIndex + 1),
+          activitySelectedByUserId,
+          // Những hoạt động đã được chia turn thì tăng order lên 1
+          ...activitiesAfterLastNotFirstTurn,
+        ];
+
+        return fairOrder;
       }
 
-      // Handle check-out case (isCheckIn = false)
+      // Handle use-case is not check-in
 
       // Find activity of the selected user
       const activitySelectedByUserId = sortedByCheckIn.find(
         (activity) => activity.user.toString() === userId,
       );
+
 
       if (!activitySelectedByUserId) {
         // If user's activity not found, use original logic
@@ -468,7 +491,9 @@ export class ActivitiesService {
         });
       }
 
+
       const selectedOrder = activitySelectedByUserId.order;
+
 
       // For activities with order > selectedOrder (except the selected one), decrease order by 1
       const adjustedActivities = sortedByCheckIn.map((activity) => {
@@ -476,37 +501,46 @@ export class ActivitiesService {
           activity.user.toString() === userId ||
           activity.order <= selectedOrder
         ) {
-          return activity;
+          return { ...activity } as Activity;
         }
         return {
-          ...activity.toObject(),
+          ...activity,
           order: activity.order - 1,
           oldOrder: activity.order,
         } as Activity;
       });
 
-      console.log(`adjustedActivities::`, adjustedActivities);
-
       // Separate activities into two groups based on isFirstTurn (excluding selected user's activity)
-      const notFirstTurn = adjustedActivities.filter(
-        (activity) =>
-          !activity.isFirstTurn && activity.user.toString() !== userId,
+      const notFirstTurn = [...adjustedActivities].filter(
+        (activity) => {
+          const _activity = (activity && typeof activity.toObject === 'function') ? activity.toObject() : activity || {};
+
+          return !_activity.isFirstTurn && _activity.user.toString() !== userId
+        },
       );
-      const isFirstTurn = adjustedActivities.filter(
-        (activity) =>
-          activity.isFirstTurn && activity.user.toString() !== userId,
+      const isFirstTurn = [...adjustedActivities].filter(
+        (activity) => {
+          const _activity = (activity && typeof activity.toObject === 'function') ? activity.toObject() : activity || {};
+          return Boolean(_activity.isFirstTurn)
+        }
       );
 
-      activitySelectedByUserId.order = adjustedActivities.length;
+      const startOrderAfterNotFirstTurn = notFirstTurn.length > 0 ? notFirstTurn[notFirstTurn.length - 1].order : 1;
+
+      const sortedFirstTurn = this.insertionSortActivity([...isFirstTurn], startOrderAfterNotFirstTurn).map((item) => {
+        return {
+          ...item,
+          order: item.order + 1,
+          oldOrder: item.order,
+        } as Activity;
+      });
+
 
       // Sort: isFirstTurn = false first (priority), isFirstTurn = true after, selected user's activity at the end
       const fairOrder = [
         ...notFirstTurn,
-        ...isFirstTurn,
-        activitySelectedByUserId,
+        ...sortedFirstTurn
       ];
-
-      console.log(`fairOrder::`, fairOrder);
 
       // Update order starting from startOrder
       return fairOrder;
@@ -522,7 +556,7 @@ export class ActivitiesService {
     if (len === 0) return array;
 
     let newArray = array.map((item, index) => {
-      const _item = item.toObject();
+      const _item = (item && typeof item.toObject === 'function') ? item.toObject() : item || {};
 
       return {
         ..._item,
