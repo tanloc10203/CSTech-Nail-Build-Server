@@ -14,6 +14,7 @@ import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
 import { AuthGuard } from './auth.guard';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { AuthV2Guard } from './auth-v2.guard';
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -42,7 +43,7 @@ export class AuthController {
     }).send(res);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthV2Guard)
   @Get('profile')
   @ApiOperation({ summary: 'Get current user logging' })
   async getProfile(@Req() req: Request, @Res() res: Response) {
@@ -70,7 +71,7 @@ export class AuthController {
     }).send(res);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthV2Guard)
   @Post('logout')
   @ApiOperation({ summary: 'Logout user' })
   async logout(@Req() req: Request, @Res() res: Response) {

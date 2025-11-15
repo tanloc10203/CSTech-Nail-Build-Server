@@ -14,6 +14,9 @@ export class Service extends mongoose.Document {
 
   @Prop({ type: Number, default: 0 })
   initTurn: number;
+
+  // @Prop({ type: Number, default: 0 })
+  // order: number;
 }
 
 export const ServicesSchema = SchemaFactory.createForClass(Service);

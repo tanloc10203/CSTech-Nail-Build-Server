@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { DOCUMENT_NAME, ServicesSchema } from './schemas/service.schema';
 import { ServicesController } from './services.controller';
 import { ServicesService } from './services.service';
+import { EventModule } from '@src/event/event.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { ServicesService } from './services.service';
         schema: ServicesSchema,
       },
     ]),
+    EventModule,
   ],
   providers: [ServicesService],
   controllers: [ServicesController],
