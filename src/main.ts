@@ -7,57 +7,25 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationError } from 'class-validator';
 import * as dotenv from 'dotenv';
-import * as fs from 'fs';
 import helmet from 'helmet';
 import * as morgan from 'morgan';
 import * as path from 'path';
 import { AppModule } from './app.module';
 import { showMessageNoti } from '@app/utils/notifier';
+import { LicenseService } from './license/license.service';
+import { INestApplication } from '@nestjs/common/interfaces';
 
 dotenv.config({
   path: path.resolve(__dirname, '../../.env'),
 });
 
-function getLicenseKeyFromFile(): string | null {
-  const licenseFilePath = path.resolve(__dirname, 'license.key');
-
-  if (fs.existsSync(licenseFilePath)) {
-    const licenseKey = fs.readFileSync(licenseFilePath, 'utf8').trim();
-    return licenseKey;
-  }
-
-  return null;
-}
-
 async function bootstrap() {
-  if (process.env.NODE_ENV === 'production') {
-    const licenseKeyFromEnv = process.env.LICENSE_KEY;
-
-    const validKey = getLicenseKeyFromFile();
-
-    if (!validKey) {
-      console.log('Missing License key from file. Exiting the application...');
-      process.exit(1); // Thoát chương trình với mã lỗi
-    }
-
-    if (!licenseKeyFromEnv) {
-      console.log('Missing license key from env. Exiting the application...');
-      process.exit(1);
-    }
-
-    if (licenseKeyFromEnv !== validKey) {
-      console.log('Invalid license key. Exiting the application...');
-      process.exit(1); // Thoát chương trình với má lỗi
-    }
-
-    console.log(`License key found in env file. Starting the application...`);
-  }
-
   await startApp();
 }
 
 async function startApp() {
   const app = await NestFactory.create(AppModule);
+  await validateLicenseOnBootstrap(app);
 
   const PORT = process.env.PORT ?? 3000;
 
@@ -112,6 +80,19 @@ async function startApp() {
   showMessageNoti(
     `Application has started successfully with port ${PORT}, IP: ${process.env.IP_ADDRESS}`,
   );
+}
+
+async function validateLicenseOnBootstrap(app: INestApplication) {
+  const licenseService = app.get(LicenseService);
+
+  try {
+    await licenseService.ensureValid(true);
+    console.log('Xác thực license thành công.');
+  } catch (error) {
+    console.error('Xác thực license thất bại khi khởi động.');
+    console.error(error);
+    process.exit(1);
+  }
 }
 
 bootstrap();

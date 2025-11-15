@@ -1,7 +1,7 @@
 import { HttpExceptionFilter } from '@app/configs/filters/http-exception.filter';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ScheduleModule } from '@nestjs/schedule';
 import * as dotenv from 'dotenv';
@@ -20,6 +20,8 @@ import { ServicesModule } from './services/services.module';
 import { TaskModule } from './task/task.module';
 import { UserModule } from './user/user.module';
 import { HealthController } from './health/health.controller';
+import { LicenseModule } from './license/license.module';
+import { LicenseGuard } from './license/license.guard';
 
 dotenv.config({
   path: path.resolve(__dirname, '../../.env'),
@@ -57,11 +59,14 @@ dotenv.config({
     EventModule,
     CustomerModule,
     HistoryModule,
-    TaskModule
+    TaskModule,
+    LicenseModule,
   ],
   controllers: [HealthController],
   providers: [
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
+    LicenseGuard,
+    { provide: APP_GUARD, useExisting: LicenseGuard },
     AdminService,
     BonjourService,
   ],
